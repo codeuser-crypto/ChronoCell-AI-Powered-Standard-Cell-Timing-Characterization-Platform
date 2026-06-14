@@ -1,0 +1,63 @@
+* ============================================================================
+* Generic 180nm-class CMOS transistor models (BSIM3 level-49 style)
+* ----------------------------------------------------------------------------
+* These are SELF-CONTAINED, ideal-ish models used as a stand-in when the full
+* sky130 PDK is not installed. They are tuned to give physically reasonable
+* 1.8 V CMOS behaviour so the testbenches simulate out of the box with ngspice.
+*
+* For real characterization, replace this file with the sky130 primitives:
+*   .lib /path/to/sky130.lib.spice tt
+* and update the .lib include statements inside the *_tb.sp netlists.
+*
+* Process corners are provided as named libraries: tt / ff / ss / fs / sf
+* (NMOS-corner / PMOS-corner ordering for the mixed corners fs and sf).
+* ============================================================================
+
+* ---- Nominal threshold / mobility knobs per corner -------------------------
+* We model corners by scaling VTH0 and U0 (mobility). Faster = lower Vth,
+* higher mobility.
+
+.lib tt
+.model nmos_mod nmos (level=49 version=3.3.0 tnom=27
++ vth0=0.40 u0=400  tox=4.1e-9 nch=1.7e17 vsat=8e4  k1=0.5 k2=0.03
++ cgso=2e-10 cgdo=2e-10 cj=1e-3 cjsw=2e-10 pclm=1.3 pdiblc1=0.1 pdiblc2=0.01)
+.model pmos_mod pmos (level=49 version=3.3.0 tnom=27
++ vth0=-0.42 u0=140  tox=4.1e-9 nch=1.7e17 vsat=7e4  k1=0.5 k2=0.03
++ cgso=2e-10 cgdo=2e-10 cj=1e-3 cjsw=2e-10 pclm=1.3 pdiblc1=0.1 pdiblc2=0.01)
+.endl tt
+
+.lib ff
+.model nmos_mod nmos (level=49 version=3.3.0 tnom=27
++ vth0=0.34 u0=460  tox=4.0e-9 nch=1.7e17 vsat=8.5e4 k1=0.5 k2=0.03
++ cgso=2e-10 cgdo=2e-10 cj=1e-3 cjsw=2e-10 pclm=1.3 pdiblc1=0.1 pdiblc2=0.01)
+.model pmos_mod pmos (level=49 version=3.3.0 tnom=27
++ vth0=-0.36 u0=165  tox=4.0e-9 nch=1.7e17 vsat=7.5e4 k1=0.5 k2=0.03
++ cgso=2e-10 cgdo=2e-10 cj=1e-3 cjsw=2e-10 pclm=1.3 pdiblc1=0.1 pdiblc2=0.01)
+.endl ff
+
+.lib ss
+.model nmos_mod nmos (level=49 version=3.3.0 tnom=27
++ vth0=0.46 u0=340  tox=4.2e-9 nch=1.7e17 vsat=7.5e4 k1=0.5 k2=0.03
++ cgso=2e-10 cgdo=2e-10 cj=1e-3 cjsw=2e-10 pclm=1.3 pdiblc1=0.1 pdiblc2=0.01)
+.model pmos_mod pmos (level=49 version=3.3.0 tnom=27
++ vth0=-0.48 u0=120  tox=4.2e-9 nch=1.7e17 vsat=6.5e4 k1=0.5 k2=0.03
++ cgso=2e-10 cgdo=2e-10 cj=1e-3 cjsw=2e-10 pclm=1.3 pdiblc1=0.1 pdiblc2=0.01)
+.endl ss
+
+.lib fs
+.model nmos_mod nmos (level=49 version=3.3.0 tnom=27
++ vth0=0.34 u0=460  tox=4.0e-9 nch=1.7e17 vsat=8.5e4 k1=0.5 k2=0.03
++ cgso=2e-10 cgdo=2e-10 cj=1e-3 cjsw=2e-10 pclm=1.3 pdiblc1=0.1 pdiblc2=0.01)
+.model pmos_mod pmos (level=49 version=3.3.0 tnom=27
++ vth0=-0.48 u0=120  tox=4.2e-9 nch=1.7e17 vsat=6.5e4 k1=0.5 k2=0.03
++ cgso=2e-10 cgdo=2e-10 cj=1e-3 cjsw=2e-10 pclm=1.3 pdiblc1=0.1 pdiblc2=0.01)
+.endl fs
+
+.lib sf
+.model nmos_mod nmos (level=49 version=3.3.0 tnom=27
++ vth0=0.46 u0=340  tox=4.2e-9 nch=1.7e17 vsat=7.5e4 k1=0.5 k2=0.03
++ cgso=2e-10 cgdo=2e-10 cj=1e-3 cjsw=2e-10 pclm=1.3 pdiblc1=0.1 pdiblc2=0.01)
+.model pmos_mod pmos (level=49 version=3.3.0 tnom=27
++ vth0=-0.36 u0=165  tox=4.0e-9 nch=1.7e17 vsat=7.5e4 k1=0.5 k2=0.03
++ cgso=2e-10 cgdo=2e-10 cj=1e-3 cjsw=2e-10 pclm=1.3 pdiblc1=0.1 pdiblc2=0.01)
+.endl sf

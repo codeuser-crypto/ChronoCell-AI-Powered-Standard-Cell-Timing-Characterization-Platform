@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ML-Assisted VLSI Timing Prediction</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div id="toast-container"></div>
+
+  <!-- ============== SECTION 1 — HERO ============== -->
+  <header class="hero">
+    <div class="hero-inner">
+      <h1>ML-Assisted VLSI Timing Prediction</h1>
+      <p class="subtitle">Neural-network surrogate replacing SPICE simulation for standard-cell delay characterization</p>
+      <div class="metric-cards">
+        <div class="metric-card"><span class="metric-value" id="hero-mape">&lt; 2%</span><span class="metric-label">prediction error</span></div>
+        <div class="metric-card"><span class="metric-value" id="hero-speed">1000&times;</span><span class="metric-label">faster than SPICE</span></div>
+        <div class="metric-card"><span class="metric-value">3</span><span class="metric-label">cell types (INV / NAND2 / DFF)</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============== SECTION 2 — PREDICTOR ============== -->
+    <section class="panel">
+      <h2>Interactive Timing Predictor</h2>
+      <div class="predictor-grid">
+        <div class="input-panel card">
+          <label class="field-label">Cell type</label>
+          <div class="toggle-group" id="cell-toggle">
+            <button class="toggle active" data-cell="inv">INV</button>
+            <button class="toggle" data-cell="nand2">NAND2</button>
+            <button class="toggle" data-cell="dff">DFF</button>
+          </div>
+
+          <label class="field-label">VDD <span class="val" id="vdd-val">1.80 V</span></label>
+          <input type="range" id="vdd" min="1.62" max="1.98" step="0.01" value="1.80" />
+
+          <label class="field-label">Temperature <span class="val" id="temp-val">27 &deg;C</span></label>
+          <input type="range" id="temp" min="-40" max="125" step="1" value="27" />
+
+          <label class="field-label">Load capacitance <span class="val" id="cload-val">10.0 fF</span></label>
+          <input type="range" id="cload" min="1" max="50" step="0.5" value="10" />
+
+          <label class="field-label">Drive strength</label>
+          <div class="toggle-group" id="drive-toggle">
+            <button class="toggle" data-drive="1">1&times;</button>
+            <button class="toggle active" data-drive="2">2&times;</button>
+            <button class="toggle" data-drive="4">4&times;</button>
+            <button class="toggle" data-drive="8">8&times;</button>
+          </div>
+
+          <label class="field-label">Process corner</label>
+          <select id="corner">
+            <option value="tt">TT (typical)</option>
+            <option value="ff">FF (fast)</option>
+            <option value="ss">SS (slow)</option>
+            <option value="fs">FS</option>
+            <option value="sf">SF</option>
+          </select>
+
+          <button class="btn primary" id="predict-btn">Predict <span class="kbd">Enter</span></button>
+        </div>
+
+        <div class="result-panel card">
+          <div class="result-main">
+            <span class="result-big" id="tpd-result">--</span>
+            <span class="result-unit">ps</span>
+            <span class="result-caption">propagation delay (t<sub>pd</sub>)</span>
+          </div>
+          <div class="result-sub">
+            <div><span class="sub-label">t<sub>pHL</sub></span><span class="mono" id="tphl-result">--</span></div>
+            <div><span class="sub-label">t<sub>pLH</sub></span><span class="mono" id="tplh-result">--</span></div>
+          </div>
+          <div class="result-footer">
+            <div class="badge"><span class="sub-label">ML latency</span><span class="mono" id="latency-result">--</span></div>
+            <div class="badge"><span class="sub-label">SPICE equiv.</span><span class="mono" id="spice-result">--</span></div>
+            <div class="badge amber"><span class="sub-label">speedup</span><span class="mono" id="speedup-result">--</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== SECTION 3 — SWEEP ============== -->
+    <section class="panel">
+      <h2>Parameter Sweep Visualizer</h2>
+      <div class="card">
+        <div class="sweep-controls">
+          <label>Sweep
+            <select id="sweep-param">
+              <option value="vdd">VDD</option>
+              <option value="temp">Temperature</option>
+              <option value="cload_ff">Load capacitance</option>
+            </select>
+          </label>
+          <label>Cell
+            <select id="sweep-cell"><option value="inv">INV</option><option value="nand2">NAND2</option><option value="dff">DFF</option></select>
+          </label>
+          <label>Drive
+            <select id="sweep-drive"><option>1</option><option selected>2</option><option>4</option><option>8</option></select>
+          </label>
+          <label>Corners
+            <span class="corner-chips" id="sweep-corners">
+              <button class="chip active" data-c="tt">TT</button>
+              <button class="chip" data-c="ff">FF</button>
+              <button class="chip" data-c="ss">SS</button>
+              <button class="chip" data-c="fs">FS</button>
+              <button class="chip" data-c="sf">SF</button>
+            </span>
+          </label>
+          <button class="btn primary" id="sweep-btn">Run sweep</button>
+        </div>
+        <div class="chart-wrap"><canvas id="sweep-chart"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ============== SECTION 4 — CORNER TABLE ============== -->
+    <section class="panel">
+      <h2>PVT Corner Table</h2>
+      <div class="card">
+        <div class="sweep-controls">
+          <label>Cell
+            <select id="ct-cell"><option value="inv">INV</option><option value="nand2">NAND2</option><option value="dff">DFF</option></select>
+          </label>
+          <label>Drive
+            <select id="ct-drive"><option>1</option><option selected>2</option><option>4</option><option>8</option></select>
+          </label>
+          <label>Load (fF)
+            <input type="number" id="ct-cload" value="10" min="1" max="50" step="0.5" />
+          </label>
+          <button class="btn primary" id="ct-btn">Generate corner table</button>
+          <button class="btn ghost" id="ct-csv">Export CSV</button>
+        </div>
+        <div class="table-wrap"><table id="corner-table"></table></div>
+        <p class="legend">Color: <span class="sw-fast"></span> fast (FF) &rarr; <span class="sw-slow"></span> slow (SS)</p>
+      </div>
+    </section>
+
+    <!-- ============== SECTION 5 — ACCURACY ============== -->
+    <section class="panel">
+      <h2>Model Accuracy Dashboard</h2>
+      <div class="stats-row" id="stats-row"></div>
+      <div class="accuracy-grid">
+        <div class="card"><h3>SPICE vs ML predicted delay</h3><div class="chart-wrap"><canvas id="scatter-chart"></canvas></div></div>
+        <div class="card"><h3>Prediction-error distribution</h3><div class="chart-wrap"><canvas id="error-chart"></canvas></div></div>
+      </div>
+      <div class="card"><h3>Per-corner accuracy</h3><div class="table-wrap"><table id="breakdown-table"></table></div></div>
+    </section>
+
+    <!-- ============== SECTION 6 — EXPLAINER ============== -->
+    <section class="panel">
+      <h2>What This Project Demonstrates</h2>
+      <div class="explainer-grid">
+        <div class="card explainer">
+          <h3>VLSI / Standard Cells</h3>
+          <p>Characterizes INV, NAND2 and DFF cells across Process-Voltage-Temperature corners — the timing data foundries ship to chip designers as Liberty (<code>.lib</code>) files.</p>
+        </div>
+        <div class="card explainer">
+          <h3>Analog / SPICE</h3>
+          <p>A parametric ngspice testbench (with a physics-grounded analytic fallback) sweeps PVT corners, drive strength and load to build a ~12k-point delay dataset.</p>
+        </div>
+        <div class="card explainer">
+          <h3>ML for EDA</h3>
+          <p>A PyTorch MLP learns the underlying delay physics and predicts in microseconds — a surrogate that regenerates timing tables thousands of times faster than SPICE.</p>
+        </div>
+      </div>
+      <div class="cta-row">
+        <a class="btn ghost" href="#" target="_blank">View GitHub</a>
+        <a class="btn ghost" href="/api/liberty">Download .lib</a>
+      </div>
+    </section>
+  </main>
+
+  <footer><p>ML-for-EDA demo &middot; sky130 (proxy) standard-cell library &middot; PyTorch + Flask</p></footer>
+
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
