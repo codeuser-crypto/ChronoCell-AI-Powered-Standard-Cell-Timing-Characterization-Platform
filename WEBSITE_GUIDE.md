@@ -7,17 +7,6 @@
 
 ---
 
-## HOW TO START THE WEBSITE
-
-```powershell
-cd C:\Users\bandi.v.shreyank\vlsi\vlsi_ml_timing
-python web/app.py
-```
-Then open **http://127.0.0.1:5000** in your browser.
-
-To stop it later: press `Ctrl+C` in that terminal, or run
-`Get-Process python | Where-Object { $_.Path -like "*Python312*" } | Stop-Process -Force`.
-
 **The page has 6 sections, top to bottom:**
 1. Hero header (the headline numbers)
 2. Interactive Timing Predictor ⭐ (the main tool)
@@ -42,7 +31,7 @@ decide how many gigahertz a chip can hit.
 
 ---
 
-## SECTION 1 — HERO HEADER (the headline)
+## SECTION 1 — HERO HEADER
 
 At the very top you see three big cards:
 
@@ -57,7 +46,7 @@ results — they're not hard-coded. This section is your **30-second pitch**.
 
 ---
 
-## SECTION 2 — INTERACTIVE TIMING PREDICTOR ⭐
+## SECTION 2 — INTERACTIVE TIMING PREDICTOR
 
 This is the heart of the demo. You set conditions on the **left**, and the AI's
 predicted delay appears on the **right** — instantly, as you move things.
@@ -312,22 +301,6 @@ the delay tables the AI predicted, in professional syntax.
    the perfect-prediction line, errors center on zero."
 6. **(Liberty)** "Finally, it exports a real Liberty file — the exact format
    foundries ship to chip designers."
-
----
-
-## CHEAT SHEET: WHICH WAY DOES DELAY GO?
-
-| If you... | Delay... | Because |
-|---|---|---|
-| raise **voltage** | ↓ goes down (faster) | more current drive |
-| raise **temperature** | ↑ goes up (slower) | electron mobility drops |
-| raise **load** | ↑ goes up (slower) | bigger capacitor to charge |
-| raise **drive strength** | ↓ goes down (faster) | wider transistors |
-| go **INV → NAND2 → DFF** | ↑ goes up | more/stacked transistors |
-| go **FF → TT → SS** corner | ↑ goes up | "slower" manufactured silicon |
-
-If you can explain *why* each arrow points the way it does, you understand the
-entire project.
 
 ---
 
