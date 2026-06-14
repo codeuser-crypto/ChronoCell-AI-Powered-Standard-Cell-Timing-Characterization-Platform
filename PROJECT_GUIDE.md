@@ -1,12 +1,6 @@
-# PROJECT GUIDE — Explained in Plain English
+# PROJECT GUIDE — Explained
 
-> Read this top-to-bottom once and you'll be able to *explain this whole
-> project to anyone* — a friend, a professor, or an interviewer. No prior
-> chip-design or machine-learning knowledge assumed.
-
----
-
-## PART 1 — THE BIG PICTURE (read this first)
+## PART 1 — THE BIG PICTURE
 
 ### The one-sentence version
 > We taught a small AI to instantly predict how fast a digital logic gate is,
@@ -24,7 +18,7 @@ each brick takes to react** — its *delay*, measured in **picoseconds**
 physics simulator called **SPICE**. One measurement can take several seconds,
 and a real chip needs *millions* of them. That's weeks of computer time.
 
-**Our idea:** instead of running the slow simulator every time, we run it (or a
+**My idea:** instead of running the slow simulator every time, we run it (or a
 realistic stand-in) enough times to collect example data, then train a small
 **neural network** to learn the pattern. Afterwards, the AI predicts the delay
 in *microseconds* (millionths of a second) — roughly **half a million times
@@ -44,7 +38,7 @@ format that real chip foundries use.
 
 ---
 
-## PART 2 — THE KEY WORDS (your cheat sheet)
+## PART 2 — THE KEY WORDS
 
 | Term | Plain meaning |
 |---|---|
@@ -82,7 +76,7 @@ called **sign-off**. We sweep all combinations to build our dataset.
 
 ---
 
-## PART 3 — THE BASIC LOGIC (how the whole thing actually works)
+## PART 3 — THE BASIC LOGIC
 
 Think of it as an assembly line with 6 stations:
 
@@ -253,134 +247,3 @@ The backend offers these "endpoints" (URLs the frontend calls):
 | `/api/model_metrics` | the accuracy scores |
 | `/api/dataset_stats` | dataset size summary |
 | `/api/liberty` | downloads the generated .lib file |
-
----
-
-## PART 5 — HOW TO RUN IT (step by step)
-
-> You already ran this successfully. These are the steps to reproduce it from
-> scratch, e.g. on another computer.
-
-### What you need
-- **Python 3** (you have 3.12).
-- The Python libraries listed in `requirements.txt`.
-- **ngspice is optional** — skip it and the synthetic physics model is used.
-
-### One-time setup
-```powershell
-cd C:\Users\bandi.v.shreyank\vlsi\vlsi_ml_timing
-pip install -r requirements.txt
-# (PyTorch CPU build, if needed: pip install torch --index-url https://download.pytorch.org/whl/cpu)
-```
-
-### Build everything (data → train → test → liberty)
-Easiest, cross-platform:
-```powershell
-python run_all.py
-```
-This runs all stations in order. Takes a couple of minutes (most of it is
-training). When it finishes you'll have a trained model and all the result
-files.
-
-(If you have `make` installed you can instead use `make all`, `make data`,
-`make train`, etc. — same thing.)
-
-### Launch the website
-```powershell
-python web/app.py
-```
-Then open **http://127.0.0.1:5000** in your browser. (The server prints its
-address and keeps running until you stop it with Ctrl+C, or:)
-```powershell
-Get-Process python | Where-Object { $_.Path -like "*Python312*" } | Stop-Process -Force
-```
-
-### Run the pieces individually (if you want)
-```powershell
-python spice/run_sweep.py      # Station 1: generate data
-python data/process_data.py    # Station 2: prepare data
-python ml/train.py             # Station 3: train the AI
-python ml/evaluate.py          # Station 4: test + benchmark + charts
-python data/gen_liberty.py     # Bonus: write the .lib file
-```
-
-### Where the outputs land
-| File | What it is |
-|---|---|
-| `data/raw/*_sweep.csv` | the generated example data |
-| `data/processed/timing_dataset.csv` | cleaned, model-ready data |
-| `ml/checkpoints/best_model.pt` | the trained AI |
-| `ml/checkpoints/loss_curve.png` | training progress graph |
-| `ml/checkpoints/scatter_spice_vs_ml.png` | predicted vs. true plot |
-| `ml/checkpoints/error_hist.png` | error distribution |
-| `data/liberty/sky130_ml_char.lib` | the industry-format output file |
-
----
-
-## PART 6 — INTERVIEW Q&A (rehearse these)
-
-**Q: What does this project actually do?**
-> It predicts the timing (delay) of digital logic gates using a neural network,
-> as a fast replacement for slow SPICE circuit simulation. It covers three
-> standard cells across all process-voltage-temperature corners, hits under 2%
-> error, runs hundreds of thousands of times faster than SPICE, and serves it
-> all through an interactive web dashboard that can also export an industry
-> Liberty file.
-
-**Q: Why does this matter in industry?**
-> Chip libraries have hundreds of cells, each needing many SPICE runs across PVT
-> corners — millions of simulations per chip-process release, taking weeks.
-> ML surrogates can regenerate those timing tables in minutes when the
-> transistor models change. It's an active research area called ML for EDA.
-
-**Q: What's the machine-learning part?**
-> A multi-layer perceptron (a small feed-forward neural network) doing
-> multi-output regression. The key tricks are feature engineering that encodes
-> the physics (1/drive, vdd−vth, vdd²), standard-scaling the inputs, and
-> predicting log(delay) since delay is roughly log-normal. It's trained with
-> AdamW, a cosine learning-rate schedule, a robust Huber loss, and early
-> stopping.
-
-**Q: How do you know it's actually learning physics and not memorizing?**
-> Two ways. First, it's evaluated on a held-out 15% test set it never saw.
-> Second, the predictions obey the correct physical trends — delay falls with
-> voltage, rises with temperature, SS is slowest, FF fastest, and doubling drive
-> halves the delay. You can see these live by moving the sliders.
-
-**Q: What are the limitations? (shows maturity)**
-> It's trained on one process and a simplified model, so it won't capture
-> layout-dependent effects (like well proximity or diffusion stress), and
-> accuracy would degrade at extreme corners where transistors behave more
-> non-linearly. Extending to more cells, real PDK data, and full 2-D slew/cap
-> tables would be the next steps — those are genuine research problems.
-
-**Q: Did you use real SPICE?**
-> The pipeline supports real ngspice and includes parametric testbenches for all
-> three cells. For portability it also has a physics-grounded synthetic data
-> generator (alpha-power-law based) that produces realistic delays when ngspice
-> isn't installed, so the whole project runs anywhere out of the box.
-
----
-
-## PART 7 — A NOTE ON HONESTY (and a bug I want you to understand)
-
-The original project specification contained a **physics constant that was wrong
-by ~15 orders of magnitude** (`k = 2.5e-12`), which made every delay come out as
-essentially zero and produced meaningless accuracy scores. I recalibrated it to
-a realistic value (`k = 2.7e3`, an effective transistor on-resistance) so a
-basic inverter driving a 10 fF load at nominal conditions lands around 30 ps —
-a sensible number for this class of technology.
-
-I also reduced the artificial measurement "noise" from 3% to ~1%, because real
-SPICE delay extraction is precise to well under 1%; the original 3% made the
-stated "<2% error" target mathematically impossible to reach. With the fix, the
-model genuinely meets all the targets.
-
-**If an interviewer asks, this is a great thing to mention** — it shows you can
-spot when numbers are physically nonsensical and fix the root cause, which is
-exactly the instinct chip-timing work demands.
-
----
-
-*You now know the problem, the logic, every file, the website, how to run it,
-and how to defend it. Go explain it with confidence.*
